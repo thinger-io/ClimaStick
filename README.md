@@ -9,7 +9,7 @@ It requires modern Arduino IDE version, starting at 1.6.3.
 
 Please, refer to the following page for a full documentation of the Arduino ClimaStick Library.
 
-[Arduino Client Library Documentation](http://docs.thinger.io/arduino/)
+[ClimaStick Documentation](http://docs.thinger.io/hardware/climaStick/)
 
 ## License
 
