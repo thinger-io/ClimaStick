@@ -45,7 +45,7 @@ typedef struct accelerometer {int16_t ax, ay, az;} Accelerometer;
 typedef struct gyroscope {int16_t gx, gy, gz;} Gyroscope;
 typedef struct motion {int16_t ax, ay, az, gx, gy, gz;} Motion;
 typedef struct compass {float heading, headingDegrees;} Compass;
-typedef struct magnetometer {float x, y, z, nx, ny, nz;} Magnetometer;
+typedef struct magnetometer {float x, y, z;} Magnetometer;
 typedef struct environmental {float temperature, humidity, pressure, altitude; uint32_t lux;} Environmental;
 typedef struct time{int hour, minute, second;} Time;
 typedef struct rgb{int r, g, b;} RGB;
@@ -205,20 +205,24 @@ public:
 	// get magnetometer measure
 	Magnetometer get_magnetometer(){
         Magnetometer magnet;
-
-		Vector raw, norm;
-		raw = compass.readRaw();
+		Vector norm;
 		norm = compass.readNormalize();
-
-		magnet.x = raw.XAxis;
-		magnet.y = raw.YAxis;
-		magnet.x = raw.ZAxis;
-		magnet.nx = norm.XAxis;
-		magnet.ny = norm.YAxis;
-		magnet.nz = norm.ZAxis;
-
+		magnet.x = norm.XAxis;
+		magnet.y = norm.YAxis;
+		magnet.z = norm.ZAxis;
 		return magnet;
 	}
+
+    // get magnetometer measure
+    Magnetometer get_raw_magnetometer(){
+        Magnetometer magnet;
+        Vector raw;
+        raw = compass.readRaw();
+        magnet.x = raw.XAxis;
+        magnet.y = raw.YAxis;
+        magnet.x = raw.ZAxis;
+        return magnet;
+    }
 	 
 	// get clima
 	Environmental get_clima(){
@@ -415,12 +419,9 @@ public:
     void init_magnetometer_resource(){
         (*this)["magnetometer"] >> [](pson &out) {
             Magnetometer magnet = ClimaStick::get().get_magnetometer();
-            out["rawX"] = magnet.x;
-            out["rawY"] = magnet.y;
-            out["rawZ"] = magnet.z;
-            out["normX"] = magnet.nx;
-            out["normY"] = magnet.ny;
-            out["normZ"] = magnet.nz;
+            out["x"] = magnet.x;
+            out["y"] = magnet.y;
+            out["z"] = magnet.z;
         };
     }
 

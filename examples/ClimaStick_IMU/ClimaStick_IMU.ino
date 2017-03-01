@@ -35,12 +35,16 @@ void setup() {
      
     thing["magnetometer"] >> [] (pson& out){
         Magnetometer magnet = thing.get_magnetometer();
+        out["normX"]=magnet.x;
+        out["normY"]=magnet.y;
+        out["normZ"]=magnet.z;
+    };
+
+    thing["magnetometer_raw"] >> [] (pson& out){
+        Magnetometer magnet = thing.get_raw_magnetometer();
         out["rawX"]=magnet.x;
         out["rawY"]=magnet.y;
         out["rawZ"]=magnet.z;
-        out["normX"]=magnet.nx;
-        out["normY"]=magnet.ny;
-        out["normZ"]=magnet.nz;
     };
 }
  
