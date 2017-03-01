@@ -46,7 +46,7 @@ typedef struct gyroscope {int16_t gx, gy, gz;} Gyroscope;
 typedef struct motion {int16_t ax, ay, az, gx, gy, gz;} Motion;
 typedef struct compass {float heading, headingDegrees;} Compass;
 typedef struct magnetometer {float x, y, z, nx, ny, nz;} Magnetometer;
-typedef struct environmental {float temperature, humidity, pressure, altitude; uint16_t luminosity; uint32_t lux;} Environmental;
+typedef struct environmental {float temperature, humidity, pressure, altitude; uint32_t lux;} Environmental;
 typedef struct time{int hour, minute, second;} Time;
 typedef struct rgb{int r, g, b;} RGB;
 
@@ -223,15 +223,11 @@ public:
 	// get clima
 	Environmental get_clima(){
         Environmental clima;
-
  		clima.temperature = bme.readTemperature();
 		clima.humidity = bme.readHumidity();
 		clima.pressure = bme.readPressure() / 100.0F;
 		clima.altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
-   		
-   		clima.luminosity = tsl.getFullLuminosity();
-   		clima.lux = tsl.getLuminosity(TSL2561_VISIBLE);
-   
+        clima.lux = tsl.getLuminosity(TSL2561_VISIBLE);
   		return clima;
 	}
 
@@ -429,7 +425,7 @@ public:
     }
 
     // initialize environment resource
-    void init_evironment_resource(){
+    void init_environment_resource(){
         (*this)["environment"] >> [](pson &out) {
             Environmental clima = ClimaStick::get().get_clima();
             out["temperature"] = clima.temperature;
@@ -437,7 +433,6 @@ public:
             out["altitude"] = clima.altitude;
             out["pressure"] = clima.pressure;
             out["lux"] = clima.lux;
-            out["luminosity"] = clima.lux;
         };
     }
 
@@ -468,10 +463,13 @@ public:
         init_gyroscope_resource();
 		init_compass_resource();
         init_magnetometer_resource();
-        init_evironment_resource();
+        init_environment_resource();
         init_rgb_resources();
 	}
 
+	void sleep(unsigned long seconds){
+		ESP.deepSleep(seconds * 1000000);
+	}
 };
 
 ClimaStick* ClimaStick::clima_ = NULL;

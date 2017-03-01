@@ -20,7 +20,6 @@ void setup() {
         out["altitude"]=clima.altitude;
         out["pressure"]=clima.pressure;
         out["lux"]=clima.lux;
-        out["luminosity"]=clima.lux;
     };
 }
  
