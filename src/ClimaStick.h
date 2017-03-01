@@ -72,26 +72,20 @@
 
 	/*struct variables*/
 
-	struct accelerometer {int16_t x, y, z;} accel;
-	struct gyroscope {int16_t x, y, z;} gyro;
-	struct compass {float heading,headingDegrees;} compass;
-	struct magnetometer {float x, y, z, nx, ny, nz;} magnet;
-	struct environmental {float temperature, humidity, pressure, altitude, luminosity, lux;} clima;
-	
+	struct accelerometer {int16_t ax, ay, az, gx, gy, gz;};
+	//struct gyroscope {int16_t x, y, z;};
+	struct compass {float heading,headingDegrees;};
+	struct magnetometer {float x, y, z, nx, ny, nz;};
+	struct environmental {float temperature, humidity, pressure, altitude, luminosity, lux;};
+	struct realTime{int hour, minute, second;};
+
 	uint16_t visibleSpectum,fullSpectum,IRSpectum;
    
 	Vector raw, norm;
 	sensors_event_t event;
  		
 	#define SEALEVELPRESSURE_HPA (1013.25)  //PRESSURE REFERENCE
- 
-	/*Routines*/
-	void getMotion();
-	void getCompass();
-	void getMagnet();
-	void getClima();
-	void getTime();
- 
+   
 	/*Sensor instances*/ 
  	HMC5883L Compass;
   	MPU6050 mpu;
@@ -104,31 +98,42 @@
  
 
 	/*INICIALIZING ALL SENSORS: I2C HANDSHAKE*/
-	void builtinSensorsBegin(){
+	void builtinSensors_begin(){
 		#ifdef _DEBUG_
 			Serial.begin(115200);
 		#endif
 	    Wire.begin();
 	 
 		/*Inicialicing sensors*/
- 
-			Serial.println(Compass.begin() ? "HMC5883L connection successful" : "HMC5883L connection failed");
+ 			int begin_ok = Compass.begin();
+			#ifdef _DEBUG_
+			Serial.println(begin_ok ? "HMC5883L connection successful" : "HMC5883L connection failed");
+		    #endif
 		    Compass.setRange(HMC5883L_RANGE_1_3GA);         // Set measurement range
 	 		Compass.setMeasurementMode(HMC5883L_CONTINOUS); // Set measurement mode
 			Compass.setDataRate(HMC5883L_DATARATE_30HZ);    // Set data rate
 			Compass.setSamples(HMC5883L_SAMPLES_8);         // Set number of samples averaged
 			Compass.setOffset(0, 0);                        // Set calibration offset. See HMC5883L_calibration.ino
 	   
-	 		
-	 		Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");	
+	 		begin_ok = mpu.testConnection();
+	 		#ifdef _DEBUG_
+	 		Serial.println(begin_ok ? "MPU6050 connection successful" : "MPU6050 connection failed");	
+		 	#endif
 		 	mpu.initialize();
 	 		mpu.setI2CMasterModeEnabled(false);
 	 		mpu.setI2CBypassEnabled(true) ;
 	  		mpu.setSleepEnabled(false);
+			bme.begin();
 
-	    	Serial.println(bme.begin() ? "BME280 connection successful" : "BME280 connection failed");
-	  
-			Serial.println(tsl.begin() ? "TSL2561 connection successful" : "TSL connection failed");
+			begin_ok = bme.begin();
+			#ifdef _DEBUG_
+	    	Serial.println(begin_ok ? "BME280 connection successful" : "BME280 connection failed");
+	  		#endif
+
+			begin_ok = tsl.begin();
+	  		#ifdef _DEBUG_
+			Serial.println(begin_ok ? "TSL2561 connection successful" : "TSL connection failed");
+	  	  	#endif
 	  	  	tsl.setGain(TSL2561_GAIN_16X);      // set 16x gain (for dim situations)
   		   	tsl.setTiming(TSL2561_INTEGRATIONTIME_13MS);  // shortest integration time (bright light)
 			
@@ -136,32 +141,40 @@
 
  
 	 /*ACCELEROMETER AND GYROSCOPE*/
-	void getMotion(){
-	  	Serial.println("getMotion");
-		mpu.getMotion6(&accel.x, &accel.y, &accel.z, &gyro.x, &gyro.y, &gyro.z);
+	accelerometer get_acceleration(){
+	  	
+	  	struct accelerometer accelgyro;
+	  	
+	  	mpu.getMotion6(&accelgyro.ax, &accelgyro.ay, &accelgyro.az, &accelgyro.gx, &accelgyro.gy, &accelgyro.gz);
+		return accelgyro;
 	};
-
+ 
 	/*MAGNETOMETER COMPASS REFRESH*/
-	void getCompass(){
-	  	Serial.println("getCompass");
-		Vector norm = Compass.readNormalize();
-		compass.heading = atan2(norm.YAxis, norm.XAxis); // Calculate heading
+	compass get_compass(){
+	  	
+	  	struct compass myCompass;
+
+	  	Vector norm = Compass.readNormalize();
+		myCompass.heading = atan2(norm.YAxis, norm.XAxis); // Calculate heading
 
 		// Set declination angle on your location and fix heading
 		// You can find  your declination on: http://magnetic-declination.com/
 		float declinationAngle = (4.0 + (26.0 / 60.0)) / (180 / M_PI); // Formula: (deg + (min / 60.0)) / (180 / M_PI);
-		compass.heading += declinationAngle;
+		myCompass.heading += declinationAngle;
 
 		// Correct for heading < 0deg and heading > 360deg
-		if (compass.heading < 0)   compass.heading += 2 * PI;
-		if (compass.heading > 2 * PI)  compass.heading -= 2 * PI;
-				compass.headingDegrees = compass.heading * 180/M_PI; // Convert to degrees
+		if (myCompass.heading < 0)   myCompass.heading += 2 * PI;
+		if (myCompass.heading > 2 * PI)  myCompass.heading -= 2 * PI;
+		myCompass.headingDegrees = myCompass.heading * 180/M_PI; // Convert to degrees		
+	
+		return myCompass;
 	};
 	 
 	 /*MAGNETOMETER AXIS RAW AND NORM*/
-	void getMagnet(){
-	  	Serial.println("getMagnet");
-		raw = Compass.readRaw();
+	magnetometer get_magnet(){
+		struct magnetometer magnet;
+
+	  	raw = Compass.readRaw();
 		norm = Compass.readNormalize();
 
 		magnet.x = raw.XAxis; 
@@ -171,12 +184,14 @@
 		magnet.ny = norm.YAxis; 
 		magnet.nz = norm.ZAxis; 
 
+		return magnet;
 	};
 	 
 	 /*ENVIRONMENTAL VARIABLES*/
-	void getClima(){
-	  	 Serial.println("getClima");
-		clima.temperature = bme.readTemperature();
+	environmental get_clima(){
+ 		struct environmental clima;
+
+ 		clima.temperature = bme.readTemperature();
 		clima.humidity = bme.readHumidity();
 		clima.pressure = bme.readPressure() / 100.0F;
 		clima.altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
@@ -187,16 +202,14 @@
    		
    		clima.luminosity = tsl.getFullLuminosity();
    		clima.lux = visibleSpectum;
-   		
-   		Serial.print("--------");
-   		Serial.println(visibleSpectum);
+   		 
 
  		uint32_t lum = tsl.getFullLuminosity();
    		uint16_t ir, full;
  		ir = lum >> 16;
   		full = lum & 0xFFFF;
    
-
+  		return clima;
 	};
 	    
 	/*
@@ -234,9 +247,15 @@
 	*	NTP client refresh: fill Hour, minute, second and date variables.
 	*/
 
-	void getTime(){
-		 if(WiFi.status() == WL_CONNECTED /*&& tiempo > 12h*/) timeClient.update(); 
-		 Serial.println(timeClient.getFormattedTime());
+	realTime get_time(){
+		struct realTime Time;
+		 
+		 if(WiFi.status() == WL_CONNECTED) timeClient.update(); 
+		 Time.hour = timeClient.getHours();
+		 Time.minute = timeClient.getMinutes();
+		 Time.second = timeClient.getSeconds();
+
+		 return Time;
 	};
  
 	/*
