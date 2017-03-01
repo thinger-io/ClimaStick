@@ -1,4 +1,4 @@
-#include <Clima_Move_Static.h>
+#include <ClimaStick.h>
  
 #define USERNAME "your_user_name"
 #define DEVICE_ID "your_device_id"
@@ -7,15 +7,14 @@
 #define SSID "your_wifi_ssid"
 #define SSID_PASSWORD "your_wifi_ssid_password"
 
-ThingerESP8266 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+ClimaStick thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
   
 void setup() {
     thing.add_wifi(SSID, SSID_PASSWORD);
-      
-    builtinSensorsBegin();  //Inicializing sensors
-         
-   thing["environment"] >> [] (pson& out){
-        getClima(); 
+    thing.init_sensors();
+
+    thing["environment"] >> [] (pson& out){
+        Environmental clima = thing.get_clima();
         out["temperature"]=clima.temperature;
         out["humidity"]=clima.humidity;
         out["altitude"]=clima.altitude;
@@ -23,11 +22,8 @@ void setup() {
         out["lux"]=clima.lux;
         out["luminosity"]=clima.lux;
     };
-
 }
  
 void loop() {
-
    thing.handle();
- 
 }

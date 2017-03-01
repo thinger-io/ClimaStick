@@ -7,47 +7,43 @@
 #define SSID "your_wifi_ssid"
 #define SSID_PASSWORD "your_wifi_ssid_password"
 
-ThingerESP8266 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+ClimaStick thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
   
 void setup() {
     thing.add_wifi(SSID, SSID_PASSWORD);
-      
-    builtinSensorsBegin();  //Inicializing sensors
-     
+    thing.init_sensors();
+
     thing["accelerometer"] >> [](pson& out){
-        getMotion();
-        out["ax"]=accel.x;
-        out["ay"]=accel.y;
-        out["az"]=accel.z;
-        };
+        Accelerometer accel = thing.get_acceleration();
+        out["ax"]=accel.ax;
+        out["ay"]=accel.ay;
+        out["az"]=accel.az;
+    };
       
     thing["gyroscope"] >> [](pson& out){
-        getMotion();
-        out["gx"]=gyro.x;
-        out["gy"]=gyro.y;
-        out["gz"]=gyro.z;
-        };
+        Gyroscope gyro = thing.get_gyroscope();
+        out["gx"]=gyro.gx;
+        out["gy"]=gyro.gy;
+        out["gz"]=gyro.gz;
+    };
     
     thing["compass"] >> [](pson& out){
-        getCompass();
+        Compass compass = thing.get_compass();
         out["heading"]=compass.heading;
         out["degHeading"]=compass.headingDegrees;
-        };
+    };
      
     thing["magnetometer"] >> [] (pson& out){
-        getMagnet();
+        Magnetometer magnet = thing.get_magnetometer();
         out["rawX"]=magnet.x;
         out["rawY"]=magnet.y;
         out["rawZ"]=magnet.z;
         out["normX"]=magnet.nx;
         out["normY"]=magnet.ny;
         out["normZ"]=magnet.nz;
-        };
-   
+    };
 }
  
 void loop() {
-     
     thing.handle();
- 
 }

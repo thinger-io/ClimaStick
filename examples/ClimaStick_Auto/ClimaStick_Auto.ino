@@ -1,5 +1,4 @@
-#define _batterySwProtection_ //This parameter enables the auto-sleep mode when battery voltage flows down 3.65V
-#include <ClimaStick_Auto.h>
+#include <ClimaStick.h>
  
 #define USERNAME "your_user_name"
 #define DEVICE_ID "your_device_id"
@@ -8,15 +7,14 @@
 #define SSID "your_wifi_ssid"
 #define SSID_PASSWORD "your_wifi_ssid_password"
 
-ThingerESP8266 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+ClimaStick thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
  
 void setup() {
   thing.add_wifi(SSID, SSID_PASSWORD);
-  init_resources(thing);  
-  
+  thing.init_sensors();
+  thing.init_resources();
 }
 
 void loop() { 
-  thing.handle(); 
-    
+  thing.handle();
 }

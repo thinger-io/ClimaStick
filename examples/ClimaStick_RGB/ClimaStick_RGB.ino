@@ -7,25 +7,28 @@
 #define SSID "your_wifi_ssid"
 #define SSID_PASSWORD "your_wifi_ssid_password"
 
-ThingerESP8266 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+ClimaStick thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
   
 void setup() {
     thing.add_wifi(SSID, SSID_PASSWORD);
       
     thing["RGB"] << [](pson& in){
-        rgb(in["r"],in["g"],in["b"]);
+        if(in.is_empty()){
+            RGB rgb =  thing.get_rgb();
+            in["r"] = rgb.r;
+            in["g"] = rgb.g;
+            in["b"] = rgb.b;
+        }else{
+            thing.set_rgb(in["r"], in["g"], in["b"]);
+        }
     };
 
     thing["setColorByName"] << [](pson& in){
         String colorName = in["ColorName"];
-        rgb(colorName);
-        };
-    
-
+        thing.set_rgb(colorName);
+    };
 }
  
 void loop() {
-
    thing.handle();
- 
 }
