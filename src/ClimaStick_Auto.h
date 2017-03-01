@@ -30,7 +30,7 @@
 
     timeClient.begin();		//Inicializing NTP 
 
-    builtinSensorsBegin();  //Inicializing sensors
+    builtinSensors_begin();  //Inicializing sensors
         
     thing["button"] >> outputValue((int)digitalRead(BUTTON));
       
@@ -40,43 +40,43 @@
         };
       
     thing["accelerometer"] >> [](pson& out){
-        getMotion();
-        out["ax"]=accel.x;
-        out["ay"]=accel.y;
-        out["az"]=accel.z;
+        struct accelerometer accelgyro = get_acceleration();
+        out["ax"]=accelgyro.ax;
+        out["ay"]=accelgyro.ay;
+        out["az"]=accelgyro.az;
         };
       
     thing["gyroscope"] >> [](pson& out){
-        getMotion();
-        out["gx"]=gyro.x;
-        out["gy"]=gyro.y;
-        out["gz"]=gyro.z;
+        struct accelerometer accelgyro = get_acceleration();
+        out["gx"]=accelgyro.gx;
+        out["gy"]=accelgyro.gy;
+        out["gz"]=accelgyro.gz;
         };
     
     thing["compass"] >> [](pson& out){
-        getCompass();
-        out["heading"]=compass.heading;
-        out["degHeading"]=compass.headingDegrees;
+        struct compass myCompass = get_compass();
+        out["heading"]=myCompass.heading;
+        out["degHeading"]=myCompass.headingDegrees;
         };
      
     thing["magnetometer"] >> [] (pson& out){
-        getMagnet();
-        out["rawX"]=magnet.x;
-        out["rawY"]=magnet.y;
-        out["rawZ"]=magnet.z;
-        out["normX"]=magnet.nx;
-        out["normY"]=magnet.ny;
-        out["normZ"]=magnet.nz;
+        struct magnetometer myMagnet = get_magnet();
+        out["rawX"]=myMagnet.x;
+        out["rawY"]=myMagnet.y;
+        out["rawZ"]=myMagnet.z;
+        out["normX"]=myMagnet.nx;
+        out["normY"]=myMagnet.ny;
+        out["normZ"]=myMagnet.nz;
         };
 
     thing["environment"] >> [] (pson& out){
-        getClima(); 
-        out["temperature"]=clima.temperature;
-        out["humidity"]=clima.humidity;
-        out["altitude"]=clima.altitude;
-        out["pressure"]=clima.pressure;
-        out["lux"]=clima.lux;
-        out["luminosity"]=clima.lux;
+        struct environmental myClima = get_clima(); 
+        out["temperature"]=myClima.temperature;
+        out["humidity"]=myClima.humidity;
+        out["altitude"]=myClima.altitude;
+        out["pressure"]=myClima.pressure;
+        out["lux"]=myClima.lux;
+        out["luminosity"]=myClima.lux;
         };
 
     thing["RGB"] << [](pson& in){
