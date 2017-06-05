@@ -38,6 +38,13 @@ Adafruit_BME280::Adafruit_BME280(int8_t cspin, int8_t mosipin, int8_t misopin, i
 { }
 
 
+void Adafruit_BME280::sleep(){    //added by JT to enabled low power consumption 300417
+  uint8_t value = read8(BME280_REGISTER_CONTROL);
+  value = (value & 0xFC) + 0x01;
+  write8(BME280_REGISTER_CONTROL, value);
+}
+
+
 bool Adafruit_BME280::begin(uint8_t a) {
   _i2caddr = a;
 

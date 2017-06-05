@@ -116,6 +116,8 @@ class Adafruit_BME280_Unified : public Adafruit_Sensor
     void  getEvent(sensors_event_t*);
     void  getSensor(sensor_t*);
 
+
+
   private:
     uint8_t   _i2c_addr;
     int32_t   _sensorID;
@@ -135,6 +137,8 @@ class Adafruit_BME280
     float readPressure(void);
     float readHumidity(void);
     float readAltitude(float seaLevel);
+
+    void sleep(); //added by JT to enabled low power consumption 300417
 
   private:
 

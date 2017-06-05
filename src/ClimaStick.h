@@ -40,6 +40,18 @@
 #include "TSL2561.h"			//LUMINOSITY SENSOR
 #include "NTPClient.hpp"        //NTP CLIENT
 
+
+//battery parameters and variables
+
+#define BATTERY_VOLTAGE_GAUGE 154		 //  x = analogRead(A0)/5
+#define BATTERY_PERCENT_GAUGE 142.85 	 //
+#define BATTERY_MIN_VOLTAGE 3.5
+#define BATTERY_SIZE 500
+#define BATTERY_CARGING_INTENSITY 500
+int last_battery_actualization;
+float last_rb,initial_bat;
+
+
 // structs for different return types
 typedef struct accelerometer {int16_t ax, ay, az;} Accelerometer;
 typedef struct gyroscope {int16_t gx, gy, gz;} Gyroscope;
@@ -121,46 +133,70 @@ public:
 
 	// initialize all sensors: I2C handshake
 	void init_sensors(){
+        #ifdef _DEBUG_
+                Serial.begin(115200);
+                    Serial.println();
+        #endif
 
-		#ifdef _DEBUG_
-			Serial.begin(115200);
-		#endif
-	    Wire.begin();
-
-		/*initializing sensors*/
-		int begin_ok = compass.begin();
-		#ifdef _DEBUG_
-		Serial.println(begin_ok ? "HMC5883L connection successful" : "HMC5883L connection failed");
-		#endif
-		compass.setRange(HMC5883L_RANGE_1_3GA);         // Set measurement range
-		compass.setMeasurementMode(HMC5883L_CONTINOUS); // Set measurement mode
-		compass.setDataRate(HMC5883L_DATARATE_30HZ);    // Set data rate
-		compass.setSamples(HMC5883L_SAMPLES_8);         // Set number of samples averaged
-		compass.setOffset(0, 0);                        // Set calibration offset. See HMC5883L_calibration.ino
-
-		begin_ok = mpu.testConnection();
-		#ifdef _DEBUG_
-		Serial.println(begin_ok ? "MPU6050 connection successful" : "MPU6050 connection failed");
-		#endif
-		mpu.initialize();
-		mpu.setI2CMasterModeEnabled(false);
-		mpu.setI2CBypassEnabled(true) ;
-		mpu.setSleepEnabled(false);
-		bme.begin();
-
-		begin_ok = bme.begin();
-		#ifdef _DEBUG_
-		Serial.println(begin_ok ? "BME280 connection successful" : "BME280 connection failed");
-		#endif
-
-		begin_ok = tsl.begin();
-		#ifdef _DEBUG_
-		Serial.println(begin_ok ? "TSL2561 connection successful" : "TSL connection failed");
-		#endif
-		tsl.setGain(TSL2561_GAIN_16X);      // set 16x gain (for dim situations)
-		tsl.setTiming(TSL2561_INTEGRATIONTIME_13MS);  // shortest integration time (bright light)
-
+                if(my_init_sensors()){
+                    return true;
+                }else{
+        #ifdef _DEBUG_
+                    Serial.println("I2C failsafe reset");
+        #endif  //if anyting fails, system will make an I2C remair routine
+                    Wire.status();
+                    return my_init_sensors();
+                }
 	}
+
+    bool my_init_sensors(){
+
+        Wire.begin();
+
+            /*initializing sensors*/
+            bool mpu_begin_ok = mpu.testConnection();
+    #ifdef _DEBUG_
+            Serial.println(mpu_begin_ok ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    #endif
+            if(mpu_begin_ok){
+                mpu.initialize();
+                mpu.setI2CMasterModeEnabled(false);
+                mpu.setI2CBypassEnabled(true) ;
+                mpu.setSleepEnabled(false);
+                bme.begin();
+            }
+
+
+            bool bme_begin_ok = bme.begin();
+    #ifdef _DEBUG_
+            Serial.println(bme_begin_ok ? "BME280 connection successful" : "BME280 connection failed");
+    #endif
+
+            bool tsl_begin_ok = tsl.begin();
+    #ifdef _DEBUG_
+            Serial.println(tsl_begin_ok ? "TSL2561 connection successful" : "TSL connection failed");
+    #endif
+            if(tsl_begin_ok){
+                tsl.setGain(TSL2561_GAIN_16X);      // set 16x gain (for dim situations)
+                tsl.setTiming(TSL2561_INTEGRATIONTIME_13MS);  // shortest integration time (bright light)
+            }
+
+            bool HMC_begin_ok = compass.begin();
+    #ifdef _DEBUG_
+            Serial.println(HMC_begin_ok ? "HMC5883L connection successful" : "HMC5883L connection failed");
+    #endif
+            if (HMC_begin_ok){
+                compass.setRange(HMC5883L_RANGE_1_3GA);         // Set measurement range
+                compass.setMeasurementMode(HMC5883L_CONTINOUS); // Set measurement mode
+                compass.setDataRate(HMC5883L_DATARATE_30HZ);    // Set data rate
+                compass.setSamples(HMC5883L_SAMPLES_8);         // Set number of samples averaged
+                compass.setOffset(0, 0);                        // Set calibration offset. See HMC5883L_calibration.ino
+            }
+
+        return(mpu_begin_ok && bme_begin_ok && tsl_begin_ok && HMC_begin_ok);
+
+    }
+
 
 	// get motion (accelerometer and gyroscope measures)
 	Motion get_motion(){
@@ -232,7 +268,10 @@ public:
 		clima.pressure = bme.readPressure() / 100.0F;
 		clima.altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
         clima.lux = tsl.getLuminosity(TSL2561_VISIBLE);
-  		return clima;
+
+				return tsl.getLuminosity(TSL2561_VISIBLE);
+
+		return clima;
 	}
 
 	// get temperature
@@ -257,22 +296,26 @@ public:
 
 	// get visible spectrum
 	uint16_t get_visible_spectrum() {
-		return tsl.getLuminosity(TSL2561_VISIBLE);
+        return tsl.getLuminosity(TSL2561_VISIBLE);
 	}
 
 	// get full spectrum
 	uint16_t get_full_spectrum() {
-		return tsl.getLuminosity(TSL2561_FULLSPECTRUM);
-	}
+        return tsl.getLuminosity(TSL2561_FULLSPECTRUM);
+    }
 
 	// get infrared spectrum
 	uint16_t get_ir_spectrum() {
-		return tsl.getLuminosity(TSL2561_INFRARED);
-	}
+
+	    return tsl.getLuminosity(TSL2561_INFRARED);
+
+	 }
 
 	// get lux (visible)
 	uint16_t get_lux() {
-		return tsl.getLuminosity(TSL2561_VISIBLE);
+
+			return tsl.getLuminosity(TSL2561_VISIBLE);
+
 	}
 
 	// get full luminosity
@@ -281,31 +324,51 @@ public:
 	}
 
 	// get current battery voltage (volts)
-	float get_battery_voltage(){ // read the ADC value and calculate the real time voltaje
-		return (float)analogRead(BAT)/205;
+	float get_battery_voltage(){ // read the ADC value and calculate the real time voltage
+		return (float)0.792683*((float)analogRead(BAT)/BATTERY_VOLTAGE_GAUGE)+1.03659;          //This function will linealize the voltage analog read
 	}
 
 	// get the remain battery load
 	float get_battery_load(){
+		float remain_battery=0;
 		float volt=get_battery_voltage();
-#ifdef _BATTERY_SW_PROTECTION_
-		if(volt<=3.65) {
+
+	#ifdef _BATTERY_SW_PROTECTION_
+		if(volt<=BATTERY_MIN_VOLTAGE) {
 			for(int t=0;t<3;t++){
 				digitalWrite(13,1);
 				delay(70);
 				digitalWrite(13,0);
 				delay(70);
 			}
-			ESP.deepSleep(0); // forced deepsleep if battery breaks the voltage range
+			 ESP.deepSleep(0);                                                                  // forced deepsleep if battery breaks the voltage range
 		}
-#endif
-		if(volt<4.2){
-			volt-=3.7;
-			volt*=200;
-		}else {
-			volt=100;
+    #endif
+
+		if(volt<4.2){			                                                                //will enter here if battery isn't charging
+			volt-=BATTERY_MIN_VOLTAGE;
+			remain_battery = volt*BATTERY_PERCENT_GAUGE;
+
+		}else if(volt>=4.2 && last_rb <100) {	                                                //leave a 0.1V hysteresis
+																	                            //will enter here if it is detected a battery and it is being charged
+			if(initial_bat==0)initial_bat = last_rb;
+			else{
+				if(millis()>last_battery_actualization + 60*1000){                               //this modification wil create a virtual battery load counter. JT 300417
+					float increaser = BATTERY_SIZE/(float)(BATTERY_CARGING_INTENSITY/60);		//this value depends of the battery charging configuration circuitry
+					initial_bat+=increaser;
+					initial_bat+=1.6;
+					initial_bat>100 ? initial_bat=100:initial_bat=initial_bat;
+					last_battery_actualization=millis();
+				}
+			}
+
+			remain_battery = initial_bat;
+		}else{
+			remain_battery= 100;
 		}
-		return volt;
+		last_rb = remain_battery;
+
+		return remain_battery;
 	}
 
 	/*
@@ -469,8 +532,18 @@ public:
 	}
 
 	void sleep(unsigned long seconds){
+        sleep_sensors();        //added by JT to enabled low power consumiption 300417
 		ESP.deepSleep(seconds * 1000000);
 	}
+
+    void sleep_sensors(){ //added by JT to enabled low power consumption 300417
+        tsl.disable();
+        mpu.setSleepEnabled(true);
+        compass.setMeasurementMode(HMC5883L_IDLE);
+        bme.sleep();
+    }
+
+
 };
 
 ClimaStick* ClimaStick::clima_ = NULL;
