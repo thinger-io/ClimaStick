@@ -132,7 +132,7 @@ public:
 	*/
 
 	// initialize all sensors: I2C handshake
-	void init_sensors(){
+	bool init_sensors(){
         #ifdef _DEBUG_
                 Serial.begin(115200);
                     Serial.println();
@@ -267,10 +267,9 @@ public:
 		clima.humidity = bme.readHumidity();
 		clima.pressure = bme.readPressure() / 100.0F;
 		clima.altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
-        clima.lux = tsl.getLuminosity(TSL2561_VISIBLE);
+        	clima.lux = tsl.getLuminosity(TSL2561_VISIBLE);
 
-				return tsl.getLuminosity(TSL2561_VISIBLE);
-
+		 
 		return clima;
 	}
 
