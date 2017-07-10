@@ -1,28 +1,28 @@
-#define _DEBUG_
 #include <ClimaStick.h>
 
-#define USERNAME "jt"
-#define DEVICE_ID "climaMove"
-#define DEVICE_CREDENTIAL "climaMove"
+#define USERNAME "your_user_name"
+#define DEVICE_ID "your_device_id"
+#define DEVICE_CREDENTIAL "your_device_credential"
 
-#define SSID "Trincado04"
-#define SSID_PASSWORD "trincadoK7"
+#define SSID "your_wifi_ssid"
+#define SSID_PASSWORD "your_wifi_ssid_password"
 
 ClimaStick thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
- long rssi;
+int timer = 0;
 void setup() {
-  Serial.begin(115200);
-  // configure board wifi
+   // configure board wifi
   thing.add_wifi(SSID, SSID_PASSWORD);
   // initialize board sensors
   thing.init_sensors();
   // define the "environment" resource
   thing.init_environment_resource();
-  thing["RSSI"]>>outputValue(rssi);
 }
 
 void loop() { 
   thing.handle();
-    rssi = WiFi.RSSI();
+     if(millis()>timer+(60000*10)){  //call each 10 minutes
+     //call thinger.io endpoint function and attacht the pson
+     thing.write_bucket("bucket_id", "environment");
+  }
   
 }
