@@ -6,21 +6,21 @@
 # Datatypes (KEYWORD1) Classes
 #######################################
 
-ClimaStick   KEYWORD1
-ThingerWifi KEYWORD1
-ThingerESP8266  KEYWORD1
-pson    KEYWORD1
+ClimaStick	KEYWORD1
+ThingerWifi	KEYWORD1
+ThingerESP8266	KEYWORD1
+pson	KEYWORD1
 
 #######################################
 # Datatypes (KEYWORD2) Methods
 #######################################
 
-in  KEYWORD2
-out KEYWORD2
+in	KEYWORD2
+out	KEYWORD2
 
 #######################################
 # Datatypes (KEYWORD3) Setup & Loop
 #######################################
 
-add_wifi    KEYWORD3
-handle  KEYWORD3
+add_wifi	KEYWORD3
+handle	KEYWORD3
