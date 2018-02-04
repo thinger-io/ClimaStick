@@ -20,9 +20,12 @@ void setup() {
 
 void loop() { 
   thing.handle();
-     if(millis()>timer+(60000*10)){  //call each 10 minutes
+     
+   if(millis()>timer+(60000*10)){  //call each 10 minutes
      //call thinger.io endpoint function and attacht the pson
      thing.write_bucket("bucket_id", "environment");
-  }
+     //actualize time counter
+     timer = millis();
+   }
   
 }
