@@ -31,6 +31,9 @@ void loop() {
      
      //call thinger.io endpoint function and attacht the pson
      thing.call_endpoint("ExampleMail", data);
+    
+    //actualize time counter
+    timer=millis();
   }
  
 }
