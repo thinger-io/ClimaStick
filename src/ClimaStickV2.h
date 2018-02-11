@@ -64,9 +64,9 @@ typedef struct time{int hour, minute, second, day;} Time;
 class ClimaStick : public ThingerESP8266{
 
 public:
-	// rgb led pins
-	#define LED_BUILTIN 13
-	static const uint8_t BuiltinLed= 13;
+	//   led pins
+	#define BUILTIN_LED 13
+	 
     static const uint8_t redLed = 13;
     static const uint8_t blueLed = 1;
 
