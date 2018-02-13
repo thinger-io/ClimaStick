@@ -10,8 +10,11 @@
 ClimaStick thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
  
 void setup() {
+  // configure board wifi
   thing.add_wifi(SSID, SSID_PASSWORD);
+  // initialize board sensors
   thing.init_sensors();
+  // define all resources
   thing.init_resources();
 }
 
