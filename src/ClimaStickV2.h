@@ -66,6 +66,8 @@ class ClimaStick : public ThingerESP8266{
 public:
 	//   led pins
 	#define BUILTIN_LED 13
+	#define LED_BUILTIN 13
+	#define BuiltinLed 13
 	 
     static const uint8_t redLed = 13;
     static const uint8_t blueLed = 1;
