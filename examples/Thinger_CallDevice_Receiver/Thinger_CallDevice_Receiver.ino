@@ -19,10 +19,10 @@ void setup() {
  
   thing[“externalEnvironment”] << [](pson& in){   //resource name should be the same as we used in the call_device instruction
       float received_temperature = in["temperature"];
-      float received_temperature = in["humidity"];
-      float received_temperature = in["altitude"];
-      float received_temperature = in["pressure"];
-      float received_temperature = in["lux"];
+      float received_humidity = in["humidity"];
+      float received_altitude = in["altitude"];
+      float received_pressure = in["pressure"];
+      float received_lux = in["lux"];
     };
 }
 
