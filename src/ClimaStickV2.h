@@ -37,9 +37,9 @@
   
 #include "MPU9250.h"			//ACELEROMETER GYRO &MAGNETOMETER
 #include "Adafruit_BME280.hpp"	//ENVIRONEMENT SENSOR
-#include "TSL2561.h"			//LUMINOSITY SENSOR
+//#include "TSL2561.h"			//LUMINOSITY SENSOR
+#include "Adafruit_TSL2591.h" 	//LLUMINOSITY SENSOR NEW LIB
 #include "NTPClient.hpp"        //NTP CLIENT
-
 
 //battery parameters and variables
 
@@ -58,7 +58,7 @@ typedef struct gyroscope {int16_t gx, gy, gz;} Gyroscope;
 typedef struct motion {int16_t ax, ay, az, gx, gy, gz;} Motion;
 typedef struct compass {float heading, headingDegrees;} Compass;
 typedef struct magnetometer {float mx, my, mz;} Magnetometer;
-typedef struct environmental {float temperature, humidity, pressure, altitude; uint32_t lux;} Environmental;
+typedef struct environmental {float temperature, humidity, pressure, altitude, lux;} Environmental;
 typedef struct time{int hour, minute, second, day;} Time;
  
 class ClimaStick : public ThingerESP8266{
@@ -94,7 +94,8 @@ protected:
 	// sensor instances
 	MPU9250 mpu;
 	Adafruit_BME280 bme; 
-  	TSL2561 tsl = TSL2561(0x49);
+//  	TSL2561 tsl = TSL2561(0x49);
+	Adafruit_TSL2591 tsl = Adafruit_TSL2591(2591);
 
  	// other instances
  	WiFiUDP ntpUDP;
@@ -197,8 +198,19 @@ public:
 	            Serial.println(tsl_begin_ok ? "TSL2561 connection successful" : "TSL connection failed");
 	    #endif
 	            if(tsl_begin_ok){
-	                tsl.setGain(TSL2561_GAIN_16X);      // set 16x gain (for dim situations)
-	                tsl.setTiming(TSL2561_INTEGRATIONTIME_13MS);  // shortest integration time (bright light)
+	                  // You can change the gain on the fly, to adapt to brighter/dimmer light situations
+					  //tsl.setGain(TSL2591_GAIN_LOW);    // 1x gain (bright light)
+					  tsl.setGain(TSL2591_GAIN_MED);      // 25x gain
+					  //tsl.setGain(TSL2591_GAIN_HIGH);   // 428x gain
+					  
+					  // Changing the integration time gives you a longer time over which to sense light
+					  // longer timelines are slower, but are good in very low light situtations!
+					  //tsl.setTiming(TSL2591_INTEGRATIONTIME_100MS);  // shortest integration time (bright light)
+					  // tsl.setTiming(TSL2591_INTEGRATIONTIME_200MS);
+					  tsl.setTiming(TSL2591_INTEGRATIONTIME_300MS);
+					  // tsl.setTiming(TSL2591_INTEGRATIONTIME_400MS);
+					  // tsl.setTiming(TSL2591_INTEGRATIONTIME_500MS);
+					  // tsl.setTiming(TSL2591_INTEGRATIONTIME_600MS);  // longest integration time (dim light)
 	            }
 	
         return(mpu_begin_ok && bme_begin_ok && tsl_begin_ok );
@@ -360,6 +372,8 @@ public:
 		
         return magnet;
     }
+	
+
 	 
 	// get clima
 	Environmental get_clima(){
@@ -368,8 +382,14 @@ public:
 		clima.humidity = bme.readHumidity();
 		clima.pressure = bme.readPressure() / 100.0F;
 		clima.altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
-        clima.lux = tsl.getLuminosity(TSL2561_FULLSPECTRUM);
-  
+       // clima.lux = tsl.getLuminosity(TSL2561_FULLSPECTRUM);
+
+		uint32_t lum = tsl.getFullLuminosity();
+		uint16_t ir, full;
+		ir = lum >> 16;
+		full = lum & 0xFFFF;
+		clima.lux = tsl.calculateLux(full, ir);
+		
 		return clima;
 	}
 
@@ -395,31 +415,33 @@ public:
 
 	// get visible spectrum
 	uint16_t get_visible_spectrum() {
-        return tsl.getLuminosity(TSL2561_VISIBLE);
+        return tsl.getLuminosity(TSL2591_VISIBLE);
 	}
 
 	// get full spectrum
 	uint16_t get_full_spectrum() {
-        return tsl.getLuminosity(TSL2561_FULLSPECTRUM);
+        return tsl.getLuminosity(TSL2591_FULLSPECTRUM);
     }
 
 	// get infrared spectrum
 	uint16_t get_ir_spectrum() {
 
-	    return tsl.getLuminosity(TSL2561_INFRARED);
+	    return tsl.getLuminosity(TSL2591_INFRARED);
 
 	 }
-
-	// get lux (visible)
-	uint16_t get_lux() {
-
-			return tsl.getLuminosity(TSL2561_VISIBLE);
-
-	}
 
 	// get full luminosity
 	uint32_t get_full_luminosity() {
 		return tsl.getFullLuminosity();
+	}
+	
+	//get luminosity in lux
+	float get_lux(){
+		uint32_t lum = tsl.getFullLuminosity();
+		uint16_t ir, full;
+		ir = lum >> 16;
+		full = lum & 0xFFFF;
+		return tsl.calculateLux(full, ir);
 	}
 
 	// get current battery voltage (volts)
